@@ -13,6 +13,8 @@ def process_arguments():
     :return:
     """
     parser = argparse.ArgumentParser(description='Script that outputs inactive branches based on number of inactive days for the given repository url')
+    parser.add_argument('auth_username', type=str, help="Gitea username credentials")
+    parser.add_argument('auth_password', type=str, help="Gitea password credentials")
     parser.add_argument('gitea_url', type=str, help='URL of the gitea server')
     parser.add_argument('owner', type=str, help="Owner of the repository")
     parser.add_argument('repository', type=str, help="Name of the repository")
@@ -168,13 +170,16 @@ class Repository:
 def main():
     try:
         args = process_arguments()
+        auth_username = args.auth_username
+        auth_password = args.auth_password
+
         gitea_url = args.gitea_url
         owner = args.owner
         repository = args.repository
         inactive_days = args.days
 
 
-        gitea = Gitea(gitea=gitea_url, auth=("cacilo", "ZacasnoGeslo321"), owner=owner,
+        gitea = Gitea(gitea=gitea_url, auth=(auth_username, auth_password), owner=owner,
                       repository=repository, verify=False)
         results = gitea.get_branches()
         branches: List[Branch] = gitea.parse_repository_results(results=results)
