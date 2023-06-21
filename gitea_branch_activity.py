@@ -12,13 +12,15 @@ def process_arguments():
     Function for getting all the mandatory command line arguments
     :return:
     """
-    parser = argparse.ArgumentParser(description='Script that outputs inactive branches based on number of inactive days for the given repository url')
-    parser.add_argument('auth_username', type=str, help="Gitea username credentials")
-    parser.add_argument('auth_password', type=str, help="Gitea password credentials")
-    parser.add_argument('gitea_url', type=str, help='URL of the gitea server')
-    parser.add_argument('owner', type=str, help="Owner of the repository")
-    parser.add_argument('repository', type=str, help="Name of the repository")
-    parser.add_argument('days', type=int, help='Number of days')
+    parser = argparse.ArgumentParser(
+        description="Script that outputs inactive branches based on number of inactive days for the given repository url"
+    )
+    parser.add_argument("auth_username", type=str, help="Gitea username credentials")
+    parser.add_argument("auth_password", type=str, help="Gitea password credentials")
+    parser.add_argument("gitea_url", type=str, help="URL of the gitea server")
+    parser.add_argument("owner", type=str, help="Owner of the repository")
+    parser.add_argument("repository", type=str, help="Name of the repository")
+    parser.add_argument("days", type=int, help="Number of days")
 
     # TODO: add token
 
@@ -33,15 +35,14 @@ class Gitea:
     - get all repository branches
     - store all the repository branhes in the Repository model
     """
-    def __init__(self, gitea: str, auth:Tuple[str, str], owner: str, repository: str, verify:bool = False):
+
+    def __init__(self, gitea: str, auth: Tuple[str, str], owner: str, repository: str, verify: bool = False):
         self.gitea = gitea
         self._owner = owner
         self._repository = repository
         self.requests = requests.Session()
         self.requests.auth = auth
-        self._headers = {
-            "Content-type": "application/json"
-        }
+        self._headers = {"Content-type": "application/json"}
 
         # Manage SSL certification verification
         self.requests.verify = verify
@@ -91,7 +92,8 @@ class Commit:
     """
     Commit model
     """
-    def __init__(self, url: str, author: str, message:str, timestamp: datetime):
+
+    def __init__(self, url: str, author: str, message: str, timestamp: datetime):
         self._url = url
         self._author = author
 
@@ -102,13 +104,13 @@ class Commit:
 
     def get_timestamp(self) -> datetime:
         return self._timestamp
+
     def get_dict(self):
         return {
             "author": self._author,
             "message": self._message,
             "timestamp": self._timestamp.strftime("%d-%m-%Y %H:%m"),
-            "url": self._url
-
+            "url": self._url,
         }
 
 
@@ -116,6 +118,7 @@ class Branch:
     """
     Branch model
     """
+
     def __init__(self, name: str, last_commit: Commit):
         self._name = name
         self._last_commit = last_commit
@@ -130,11 +133,7 @@ class Branch:
         today = datetime.today()
         time_since_last_commit = today - self._last_commit.get_timestamp()
         last_commit_dict = self._last_commit.get_dict()
-        return {
-            "name": self._name,
-            "days_since_last_commit": time_since_last_commit.days,
-            **last_commit_dict
-        }
+        return {"name": self._name, "days_since_last_commit": time_since_last_commit.days, **last_commit_dict}
 
     def is_active(self, time_inactive: timedelta) -> bool:
         """
@@ -150,6 +149,7 @@ class Repository:
     """
     Repository model
     """
+
     def __init__(self, name: str, branches: List[Branch]):
         self._name = name
         self._branches = branches
@@ -178,20 +178,21 @@ def main():
         repository = args.repository
         inactive_days = args.days
 
-
-        gitea = Gitea(gitea=gitea_url, auth=(auth_username, auth_password), owner=owner,
-                      repository=repository, verify=False)
+        gitea = Gitea(
+            gitea=gitea_url, auth=(auth_username, auth_password), owner=owner, repository=repository, verify=False
+        )
         results = gitea.get_branches()
         branches: List[Branch] = gitea.parse_repository_results(results=results)
 
         repo = Repository(name="FWSW_Platform", branches=branches)
-        inactive_repo = Repository(name="FWSW_Platform",
-                               branches=repo.get_inactive_branches(time_inactive=timedelta(days=inactive_days)))
+        inactive_repo = Repository(
+            name="FWSW_Platform", branches=repo.get_inactive_branches(time_inactive=timedelta(days=inactive_days))
+        )
         inactive_repo.display_tabulate(sort_by_datetime=True)
 
     except Exception as exc:
         print("Exception", exc)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
