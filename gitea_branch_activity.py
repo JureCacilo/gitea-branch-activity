@@ -2,25 +2,23 @@ from typing import Tuple, List, Dict
 import json
 import argparse
 from datetime import datetime, timedelta
+import logging
+
 import urllib3
 import requests
 from tabulate import tabulate
 
 
 def process_arguments():
-    """
-    Function for getting all the mandatory command line arguments
-    :return:
-    """
     parser = argparse.ArgumentParser(
         description="Script that outputs inactive branches based on number of inactive days for the given repository url"
     )
-    parser.add_argument("auth_username", type=str, help="Gitea username credentials")
-    parser.add_argument("auth_password", type=str, help="Gitea password credentials")
-    parser.add_argument("gitea_url", type=str, help="URL of the gitea server")
-    parser.add_argument("owner", type=str, help="Owner of the repository")
-    parser.add_argument("repository", type=str, help="Name of the repository")
-    parser.add_argument("days", type=int, help="Number of days")
+    parser.add_argument("--auth_username", type=str, help="Gitea username credentials")
+    parser.add_argument("--auth_password", type=str, help="Gitea password credentials")
+    parser.add_argument("--gitea_url", type=str, help="URL of the gitea server")
+    parser.add_argument("--owner", type=str, help="Owner of the repository")
+    parser.add_argument("--repository", type=str, help="Name of the repository")
+    parser.add_argument("--days", type=int, help="Number of days")
 
     # TODO: add token
 
@@ -33,11 +31,11 @@ class Gitea:
     Class for working with the Gitea API.
     Features:
     - get all repository branches
-    - store all the repository branhes in the Repository model
+    - store all the repository branches in the Repository model
     """
 
-    def __init__(self, gitea: str, auth: Tuple[str, str], owner: str, repository: str, verify: bool = False):
-        self.gitea = gitea
+    def __init__(self, gitea_server: str, auth: Tuple[str, str], owner: str, repository: str, verify: bool = False):
+        self.gitea = gitea_server
         self._owner = owner
         self._repository = repository
         self.requests = requests.Session()
@@ -54,9 +52,6 @@ class Gitea:
         return url
 
     def get_branches(self) -> Dict:
-        """
-        Function that gets all the branches from the repository and returns a Dict of all available branches
-        """
         endpoint = f"{self._owner}/{self._repository}/branches"
         request = self.requests.get(self._get_url(endpoint=endpoint), headers=self._headers)
 
@@ -89,9 +84,6 @@ class Gitea:
 
 
 class Commit:
-    """
-    Commit model
-    """
 
     def __init__(self, url: str, author: str, message: str, timestamp: datetime):
         self._url = url
@@ -115,9 +107,6 @@ class Commit:
 
 
 class Branch:
-    """
-    Branch model
-    """
 
     def __init__(self, name: str, last_commit: Commit):
         self._name = name
@@ -146,9 +135,6 @@ class Branch:
 
 
 class Repository:
-    """
-    Repository model
-    """
 
     def __init__(self, name: str, branches: List[Branch]):
         self._name = name
@@ -179,7 +165,7 @@ def main():
         inactive_days = args.days
 
         gitea = Gitea(
-            gitea=gitea_url, auth=(auth_username, auth_password), owner=owner, repository=repository, verify=False
+            gitea_server=gitea_url, auth=(auth_username, auth_password), owner=owner, repository=repository, verify=False
         )
         results = gitea.get_branches()
         branches: List[Branch] = gitea.parse_repository_results(results=results)
@@ -191,7 +177,7 @@ def main():
         inactive_repo.display_tabulate(sort_by_datetime=True)
 
     except Exception as exc:
-        print("Exception", exc)
+        logging.error("Exception", exc)
 
 
 if __name__ == "__main__":
