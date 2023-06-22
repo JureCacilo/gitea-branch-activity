@@ -1,3 +1,17 @@
+"""
+COPYRIGHT(c) 2020 RLS d.o.o, Pod vrbami 2, 1218 Komenda, Slovenia
+
+file:      branch_activity_report.py
+brief:     Reports the branch activity of the given repo.
+author(s): Jure Čačilo
+date:      22.06.2023
+
+details:    Reports the activity of branches of a given repository based on the gitea server, owner,
+            repository and number of days of inactivity.
+            Output is a table of branches where the last commit of the branch
+            was more than the given number of inactive days.
+"""
+
 from typing import Tuple, List, Dict
 import json
 import argparse
@@ -177,7 +191,7 @@ def main():
         inactive_repo.display_tabulate(sort_by_datetime=True)
 
     except Exception as exc:
-        logging.error("Exception", exc)
+        logging.error("Exception %s", exc)
 
 
 if __name__ == "__main__":
