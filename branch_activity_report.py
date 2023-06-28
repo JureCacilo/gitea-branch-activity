@@ -27,14 +27,11 @@ def process_arguments():
     parser = argparse.ArgumentParser(
         description="Script that outputs inactive branches based on number of inactive days for the given repository url"
     )
-    parser.add_argument("--auth_username", type=str, help="Gitea username credentials")
-    parser.add_argument("--auth_password", type=str, help="Gitea password credentials")
+    parser.add_argument("--access_token", type=str, help="Gitea access token")
     parser.add_argument("--gitea_url", type=str, help="URL of the gitea server")
     parser.add_argument("--owner", type=str, help="Owner of the repository")
     parser.add_argument("--repository", type=str, help="Name of the repository")
     parser.add_argument("--days", type=int, help="Number of days")
-
-    # TODO: add token
 
     args = parser.parse_args()
     return args
@@ -48,13 +45,12 @@ class Gitea:
     - store all the repository branches in the Repository model
     """
 
-    def __init__(self, gitea_server: str, auth: Tuple[str, str], owner: str, repository: str, verify: bool = False):
+    def __init__(self, gitea_server: str, access_token: str, owner: str, repository: str, verify: bool = False):
         self.gitea = gitea_server
         self._owner = owner
         self._repository = repository
         self.requests = requests.Session()
-        self.requests.auth = auth
-        self._headers = {"Content-type": "application/json"}
+        self._headers = {"Content-type": "application/json", "Authorization": f"token {access_token}"}
 
         # Manage SSL certification verification
         self.requests.verify = verify
@@ -170,8 +166,7 @@ class Repository:
 def main():
     try:
         args = process_arguments()
-        auth_username = args.auth_username
-        auth_password = args.auth_password
+        access_token = args.access_token
 
         gitea_url = args.gitea_url
         owner = args.owner
@@ -179,7 +174,7 @@ def main():
         inactive_days = args.days
 
         gitea = Gitea(
-            gitea_server=gitea_url, auth=(auth_username, auth_password), owner=owner, repository=repository, verify=False
+            gitea_server=gitea_url, access_token=access_token, owner=owner, repository=repository, verify=False
         )
         results = gitea.get_branches()
         branches: List[Branch] = gitea.parse_repository_results(results=results)
